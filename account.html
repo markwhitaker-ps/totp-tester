@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My account — TOTP Tester</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>TOTP Tester</header>
+  <main>
+    <div class="card">
+      <h1>Welcome, carlos</h1>
+      <p class="sub">You are signed in. This is a dummy account page.</p>
+      <p>Multi-factor authentication:
+        <span id="mfa-status" class="status-pill off">off</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Account settings</h2>
+      <p><a href="mfa-setup.html" id="mfa-link">Set up MFA</a></p>
+      <button class="secondary" id="logout-btn">Log out</button>
+    </div>
+  </main>
+  <footer>Static test site for Burp Suite DAST — not a real login.</footer>
+
+  <script src="js/totp.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    const status = document.getElementById('mfa-status');
+    const link = document.getElementById('mfa-link');
+    if (Auth.isMfaEnabled()) {
+      status.textContent = 'on';
+      status.className = 'status-pill on';
+      link.textContent = 'Manage MFA';
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      Auth.logout();
+      location.assign('index.html');
+    });
+  </script>
+</body>
+</html>

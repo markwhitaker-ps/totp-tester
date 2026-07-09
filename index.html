@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login — TOTP Tester</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>TOTP Tester</header>
+  <main>
+    <div class="card">
+      <h1>Sign in</h1>
+      <p class="sub">Test account: <strong>carlos</strong> / <strong>hunter2</strong></p>
+
+      <form id="login-form" autocomplete="off">
+        <!-- Step 1: credentials -->
+        <div id="creds-step">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required>
+
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+
+        <!-- Step 2: TOTP (revealed only if MFA is enabled) -->
+        <div id="totp-step" class="hidden">
+          <label for="totp">Authentication code</label>
+          <input type="text" id="totp" name="totp" inputmode="numeric"
+                 pattern="\d{6}" maxlength="6" placeholder="6-digit code">
+        </div>
+
+        <button type="submit" id="submit-btn">Log in</button>
+        <div class="msg" id="msg"></div>
+      </form>
+    </div>
+  </main>
+  <footer>Static test site for Burp Suite DAST — not a real login.</footer>
+
+  <script src="js/totp.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    Auth.redirectIfAuthed();
+
+    const form = document.getElementById('login-form');
+    const credsStep = document.getElementById('creds-step');
+    const totpStep = document.getElementById('totp-step');
+    const submitBtn = document.getElementById('submit-btn');
+    const msg = document.getElementById('msg');
+
+    let stage = 'creds'; // 'creds' -> 'totp'
+
+    function fail(text) {
+      msg.textContent = text;
+      msg.className = 'msg error';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+
+      if (stage === 'creds') {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value;
+        if (!Auth.checkCredentials(u, p)) {
+          return fail('Invalid username or password.');
+        }
+        if (Auth.isMfaEnabled()) {
+          // Move to the second factor.
+          stage = 'totp';
+          credsStep.classList.add('hidden');
+          totpStep.classList.remove('hidden');
+          submitBtn.textContent = 'Verify';
+          document.getElementById('totp').focus();
+          return;
+        }
+        Auth.startSession();
+        return location.assign('account.html');
+      }
+
+      // stage === 'totp'
+      const code = document.getElementById('totp').value;
+      const ok = await Auth.verifyEnrolledCode(code);
+      if (!ok) return fail('Invalid authentication code.');
+      Auth.startSession();
+      location.assign('account.html');
+    });
+  </script>
+</body>
+</html>

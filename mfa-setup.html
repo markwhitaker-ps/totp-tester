@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up MFA — TOTP Tester</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>TOTP Tester</header>
+  <main>
+    <!-- Enrollment view: shown when MFA is not yet enabled -->
+    <div class="card hidden" id="enroll-view">
+      <h1>Set up TOTP MFA</h1>
+      <p class="sub">Scan the QR code with an authenticator app, or copy the
+        secret into Burp Suite's TOTP configuration, then enter a code to confirm.</p>
+
+      <div class="qr" id="qr"></div>
+
+      <label>Secret (Base32)</label>
+      <div class="secret" id="secret"></div>
+
+      <label>otpauth URI</label>
+      <div class="secret" id="uri"></div>
+
+      <p class="countdown" id="live-code"></p>
+
+      <form id="confirm-form" autocomplete="off">
+        <label for="confirm">Enter the current 6-digit code to enable MFA</label>
+        <input type="text" id="confirm" inputmode="numeric" pattern="\d{6}"
+               maxlength="6" placeholder="6-digit code" required>
+        <button type="submit">Enable MFA</button>
+        <div class="msg" id="msg"></div>
+      </form>
+    </div>
+
+    <!-- Enabled view: shown when MFA is already on -->
+    <div class="card hidden" id="enabled-view">
+      <h1>MFA is enabled</h1>
+      <p class="sub">Your account is protected by a time-based one-time password.</p>
+      <p>Secret currently in use:</p>
+      <div class="secret" id="current-secret"></div>
+      <p class="countdown" id="live-code-enabled"></p>
+      <div class="row">
+        <button class="secondary" id="disable-btn">Disable MFA</button>
+        <button class="secondary" id="reenroll-btn">Set up again</button>
+      </div>
+    </div>
+
+    <p style="margin-top:1rem"><a href="account.html">&larr; Back to account</a></p>
+  </main>
+  <footer>Static test site for Burp Suite DAST — not a real login.</footer>
+
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/totp.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    const enrollView = document.getElementById('enroll-view');
+    const enabledView = document.getElementById('enabled-view');
+    let pendingSecret = null;   // secret being enrolled, not yet saved
+    let liveTimer = null;
+
+    function renderQr(uri) {
+      const qr = qrcode(0, 'M');
+      qr.addData(uri);
+      qr.make();
+      document.getElementById('qr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2 });
+    }
+
+    // Show the current code + countdown to make manual testing easy.
+    function startLiveCode(secret, el) {
+      async function tick() {
+        const code = await TOTP.generate(secret);
+        el.textContent = `Current code: ${code} (expires in ${TOTP.secondsRemaining()}s)`;
+      }
+      tick();
+      clearInterval(liveTimer);
+      liveTimer = setInterval(tick, 1000);
+    }
+
+    function showEnroll() {
+      enabledView.classList.add('hidden');
+      enrollView.classList.remove('hidden');
+      pendingSecret = TOTP.generateSecret();
+      const uri = TOTP.otpauthUri(pendingSecret);
+      document.getElementById('secret').textContent = pendingSecret;
+      document.getElementById('uri').textContent = uri;
+      renderQr(uri);
+      startLiveCode(pendingSecret, document.getElementById('live-code'));
+    }
+
+    function showEnabled() {
+      enrollView.classList.add('hidden');
+      enabledView.classList.remove('hidden');
+      document.getElementById('current-secret').textContent = Auth.getSecret();
+      startLiveCode(Auth.getSecret(), document.getElementById('live-code-enabled'));
+    }
+
+    document.getElementById('confirm-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      const code = document.getElementById('confirm').value;
+      if (!(await TOTP.verify(pendingSecret, code))) {
+        msg.textContent = 'That code is not valid. Check the code and try again.';
+        msg.className = 'msg error';
+        return;
+      }
+      Auth.enableMfa(pendingSecret);
+      msg.textContent = 'MFA enabled. Redirecting…';
+      msg.className = 'msg ok';
+      clearInterval(liveTimer);
+      setTimeout(() => location.assign('account.html'), 900);
+    });
+
+    document.getElementById('disable-btn').addEventListener('click', () => {
+      Auth.disableMfa();
+      showEnroll();
+    });
+    document.getElementById('reenroll-btn').addEventListener('click', showEnroll);
+
+    // Initial view depends on current enrollment state.
+    if (Auth.isMfaEnabled()) showEnabled(); else showEnroll();
+  </script>
+</body>
+</html>
