@@ -5,8 +5,7 @@
 ### ➡️ Deployed at [totp-tester.netlify.app](https://totp-tester.netlify.app/)
 
 A deliberately minimal static website with a username/password login and
-optional TOTP (time-based one-time password) MFA. Built for testing **recorded
-logins in Burp Suite DAST**.
+optional TOTP (time-based one-time password) MFA. Built for testing purposes only.
 
 It is a pure static site — HTML, CSS and vanilla JS, no backend and no build
 step. All "auth" happens in the browser and is fake; it exists only to exercise
@@ -52,7 +51,7 @@ password: hunter2
 
 1. Log in and open **Set up MFA** from the account page.
 2. Scan the QR code with an authenticator app, or copy the **Base32 secret** /
-   **otpauth URI** into Burp's TOTP configuration.
+   **otpauth URI** into your app's TOTP configuration.
 3. Enter the current 6-digit code to enable MFA. The setup page also shows the
    live current code + countdown to make manual testing easy.
 

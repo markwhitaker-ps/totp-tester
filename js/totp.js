@@ -84,7 +84,7 @@
     return false;
   }
 
-  // Build an otpauth:// URI for enrolling authenticator apps / Burp.
+  // Build an otpauth:// URI for enrolling authenticator apps.
   function otpauthUri(secret, account = 'carlos', issuer = 'TOTP Tester') {
     const label = encodeURIComponent(`${issuer}:${account}`);
     const params = new URLSearchParams({
