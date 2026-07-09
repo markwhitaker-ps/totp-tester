@@ -75,10 +75,3 @@ Any static server over `localhost` works, e.g.:
 python3 -m http.server 8080
 # then open http://localhost:8080
 ```
-
-## Deploying to Netlify
-
-- **Drag & drop:** drop this folder onto the Netlify dashboard.
-- **CLI:** `netlify deploy --prod` from this directory.
-- **Git:** connect the repo; `netlify.toml` sets publish dir `.` and no build
-  command.
