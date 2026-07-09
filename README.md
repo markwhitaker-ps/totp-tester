@@ -2,6 +2,8 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/3ed0b431-7de7-45b9-abf1-e85a09daa81b/deploy-status)](https://app.netlify.com/projects/totp-tester/deploys)
 
+### ➡️ Deployed at [totp-tester.netlify.app](https://totp-tester.netlify.app/)
+
 A deliberately minimal static website with a username/password login and
 optional TOTP (time-based one-time password) MFA. Built for testing **recorded
 logins in Burp Suite DAST**.
